@@ -415,7 +415,7 @@
   const STATUS_EMOJI = ["⏸️","⚙️","🔍","✅"];
 
   // ── ถ้าเปิดผ่าน Google Drive แล้ว URL หาย ให้วาง URL ตรงนี้ได้เลย ──
-  const HARDCODED_URL = "https://script.google.com/macros/s/AKfycbyE8cTazvbwRKzrRiLbhTDvS5GdMsYFzGAwuRfcSwqQzuU-_64PNP5_aW51iKaTkbVW/exec"; // ← ใส่ URL Apps Script ของคุณที่นี่ เช่น "https://script.google.com/macros/s/xxx/exec"
+  const HARDCODED_URL = "https://script.google.com/macros/s/AKfycbzpCYZhERja0bZ7IkkDQcGWz5xcLbk-lEphzejuVDPyNz7kanBwkDuvZbTgZaqSErDo/exec"; // ← ใส่ URL Apps Script ของคุณที่นี่ เช่น "https://script.google.com/macros/s/xxx/exec"
 
   let SCRIPT_URL   = HARDCODED_URL || localStorage.getItem("scriptUrl") || "";
   let MACHINES = []; // รายชื่อเครื่องดึงจาก Sheet
@@ -793,21 +793,20 @@
   }
   function formatThaiDate(raw) {
     if (!raw) return "-";
-    // ถ้าเป็นรูปแบบ dd/mm/yyyy hh:mm:ss แล้ว แสดงตรงๆ
+    // รูปแบบใหม่ dd/mm/yyyy hh:mm:ss (พ.ศ.) — แสดงตรงๆ
     if (/^\d{2}\/\d{2}\/\d{4}/.test(raw)) return raw;
-    // แปลง Date string เช่น "Fri Jun 19 2026 08:36:24 GMT+0700"
+    // รูปแบบเก่า เช่น "Sun Jun 25 2569 10:28:22 GMT+0700 (เวลาอินโดจีน)"
     try {
-      const d = new Date(raw);
-      if (isNaN(d)) return raw;
-      // แปลงเป็นเวลาไทย UTC+7
-      const bkk = new Date(d.getTime() + (7*60 - d.getTimezoneOffset()) * 60000);
-      const dd   = String(bkk.getDate()).padStart(2,"0");
-      const mm   = String(bkk.getMonth()+1).padStart(2,"0");
-      const yyyy = bkk.getFullYear() + 543;
-      const hh   = String(bkk.getHours()).padStart(2,"0");
-      const min  = String(bkk.getMinutes()).padStart(2,"0");
-      const ss   = String(bkk.getSeconds()).padStart(2,"0");
-      return `${dd}/${mm}/${yyyy} ${hh}:${min}:${ss}`;
+      // ดึงเฉพาะส่วนวันที่และเวลา ตัด timezone ออก
+      const match = raw.match(/(\w+)\s+(\w+)\s+(\d+)\s+(\d+)\s+(\d{2}:\d{2}:\d{2})/);
+      if (!match) return raw;
+      const [, , monthStr, day, year, time] = match;
+      const months = { Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12 };
+      const mm = String(months[monthStr] || 1).padStart(2,"0");
+      const dd = String(day).padStart(2,"0");
+      // ปีที่ได้มาอาจเป็น ค.ศ. หรือ พ.ศ. แล้ว — ถ้าน้อยกว่า 2500 ให้บวก 543
+      const yyyy = Number(year) < 2500 ? Number(year) + 543 : Number(year);
+      return `${dd}/${mm}/${yyyy} ${time}`;
     } catch(e) { return raw; }
   }
 
